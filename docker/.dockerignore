@@ -1,0 +1,14 @@
+.git
+.gitignore
+.dockerignore
+*.md
+threat-composer
+app-copy
+app/node_modules
+app/build
+app/.git
+app/coverage
+app/.eslintcache
+.env
+.env.*
+.DS_Store
