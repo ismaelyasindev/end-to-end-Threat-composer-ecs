@@ -50,6 +50,7 @@ resource "aws_vpc_security_group_ingress_rule" "task_from_alb" {
   referenced_security_group_id = aws_security_group.alb.id
 }
 
+#trivy:ignore:AVD-AWS-0104
 resource "aws_vpc_security_group_egress_rule" "task_https_out" {
   security_group_id = aws_security_group.task.id
   from_port         = 443

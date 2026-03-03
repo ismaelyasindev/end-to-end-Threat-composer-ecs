@@ -23,12 +23,14 @@ resource "aws_lb_target_group" "this" {
   }
 }
 
+#trivy:ignore:AVD-AWS-0053
 resource "aws_lb" "this" {
   name               = "ecs-alb"
   internal           = false
   load_balancer_type = "application"
   security_groups    = [var.alb_sg_id]
   subnets            = var.alb_subnet_public
+  drop_invalid_header_fields = true
 
   tags = {
     Name    = "ecs-alb"
@@ -36,6 +38,7 @@ resource "aws_lb" "this" {
   }
 }
 
+#trivy:ignore:AVD-AWS-0054
 resource "aws_lb_listener" "http" {
   count             = var.certificate_arn == "" ? 1 : 0
   load_balancer_arn = aws_lb.this.arn

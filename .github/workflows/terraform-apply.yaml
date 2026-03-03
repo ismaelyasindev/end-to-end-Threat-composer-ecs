@@ -26,7 +26,6 @@ jobs:
           ignore-unfixed: true
           exit-code: "1"
           severity: CRITICAL,HIGH
-          skip-checks: AWS-0052,AWS-0053,AWS-0054,AWS-0104
 
   terraform-plan:
     needs: trivy-scan
