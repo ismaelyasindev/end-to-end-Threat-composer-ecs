@@ -1,0 +1,108 @@
+name: Terraform Plan and Apply
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "terraform/**"
+
+concurrency: ci-${{ github.repository }}-terraform
+
+jobs:
+  trivy-scan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Trivy IaC scan
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          scan-type: config
+          scan-ref: terraform/
+          format: table
+          ignore-unfixed: true
+          exit-code: "1"
+          severity: CRITICAL,HIGH
+
+  terraform-plan:
+    needs: trivy-scan
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.ROLE_TO_ASSUME }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Terraform init
+        working-directory: terraform
+        run: |
+          set -eux
+          terraform init -upgrade -reconfigure
+
+      - name: Terraform validate and plan
+        working-directory: terraform
+        run: |
+          set -eux
+          terraform validate
+          terraform fmt -recursive -diff
+          terraform plan -input=false -out=tfplan
+          terraform show tfplan
+
+      - name: Upload plan artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan
+          path: terraform/tfplan
+
+  terraform-apply:
+    needs: terraform-plan
+    runs-on: ubuntu-latest
+    environment: prod
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.ROLE_TO_ASSUME }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Terraform init
+        working-directory: terraform
+        run: |
+          set -eux
+          terraform init -upgrade -reconfigure
+
+      - name: Download plan artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan
+          path: terraform
+
+      - name: Terraform apply
+        working-directory: terraform
+        run: |
+          set -eux
+          terraform apply tfplan
