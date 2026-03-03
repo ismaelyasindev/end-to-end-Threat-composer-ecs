@@ -15,10 +15,10 @@ variable "ecs_ecr_repo_name" {
 
 variable "ecs_domain" {
   type    = string
-  default = ""
+  default = "threat.ismaelawsdashboard.site"
 }
 
 variable "ecs_route53_domain" {
   type    = string
-  default = ""
+  default = "ismaelawsdashboard.site"
 }

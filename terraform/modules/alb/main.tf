@@ -56,6 +56,7 @@ resource "aws_lb_listener" "http_redirect" {
   load_balancer_arn = aws_lb.this.arn
   port              = 80
   protocol          = "HTTP"
+  depends_on        = [aws_lb_listener.https]
 
   default_action {
     type = "redirect"
