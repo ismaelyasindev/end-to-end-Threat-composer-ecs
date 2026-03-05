@@ -32,6 +32,10 @@ Users access the application through Route 53 DNS resolution, which routes traff
 
 The VPC spans two availability zones (eu-west-2a and eu-west-2b) with public subnets hosting the load balancer and NAT gateway, whilst private subnets contain the application containers. This design ensures security through network isolation whilst maintaining internet connectivity for container image pulls from ECR.
 
+## Demo
+
+![Threat Composer Demo](./asset/threat-composer.gif)
+
 ## Technology Stack
 
 **Frontend**
@@ -120,11 +124,17 @@ Builds the Docker image using a multi stage build process. The React application
 
 **Apply Workflow**
 
-Runs Trivy IaC scan on Terraform configuration. Executes Terraform plan to preview infrastructure changes. The plan is saved as an artifact and uploaded. After manual approval through the production environment, Terraform apply executes the changes. This ensures infrastructure modifications are reviewed before implementation. Triggered on changes to terraform path.
+Triggered on changes to terraform path. The workflow runs in sequence:
+
+**Trivy IaC Scan** scans the Terraform configuration for security vulnerabilities and misconfigurations before any infrastructure changes. Critical and high severity issues must be resolved before the plan proceeds.
 
 ![Trivy IaC Scan](./asset/trivy-scan.jpg)
 
+**Terraform Plan** previews infrastructure changes. The plan is saved as an artifact and uploaded for review.
+
 ![Terraform Plan](./asset/plan.jpg)
+
+**Terraform Apply** executes after manual approval through the production environment. This ensures infrastructure modifications are reviewed before implementation.
 
 ![Terraform Apply](./asset/apply.jpg)
 
@@ -133,10 +143,6 @@ Runs Trivy IaC scan on Terraform configuration. Executes Terraform plan to previ
 Waits for the Terraform workflow to complete successfully, then retrieves the ALB DNS name and repeatedly checks the application health endpoint. The workflow retries up to five times with ten second intervals. If the health check passes, the deployment is considered successful.
 
 ![Health Check](./asset/health-check.jpg)
-
-## Demo
-
-![Threat Composer Demo](./asset/threat-comoposer-demo.gif)
 
 ## Learning Curve and Challenges
 
