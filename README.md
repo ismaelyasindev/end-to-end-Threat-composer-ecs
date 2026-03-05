@@ -144,6 +144,12 @@ Waits for the Terraform workflow to complete successfully, then retrieves the AL
 
 ![Health Check](./asset/health-check.jpg)
 
+**Destroy Workflow**
+
+Manually triggered to tear down all infrastructure. Runs a destroy plan first, then requires approval through the production environment before executing. Use this when you need to remove the deployed resources.
+
+![Terraform Destroy](./asset/destroy.jpeg)
+
 ## Learning Curve and Challenges
 
 Building this project involved learning several new concepts and overcoming various challenges.
