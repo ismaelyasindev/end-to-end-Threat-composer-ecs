@@ -1,0 +1,84 @@
+name: Terraform Destroy
+
+on:
+  workflow_dispatch:
+
+concurrency: ci-${{ github.repository }}-terraform
+
+jobs:
+  terraform-destroy-plan:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.ROLE_TO_ASSUME }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Terraform init
+        working-directory: terraform
+        run: |
+          set -eux
+          terraform init -upgrade -reconfigure
+
+      - name: Terraform plan destroy
+        working-directory: terraform
+        run: |
+          set -eux
+          terraform plan -destroy -input=false -out=tfdestroy
+          terraform show tfdestroy
+
+      - name: Upload destroy plan artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfdestroy
+          path: terraform/tfdestroy
+
+  terraform-destroy-apply:
+    needs: terraform-destroy-plan
+    runs-on: ubuntu-latest
+    environment: prod
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.ROLE_TO_ASSUME }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Terraform init
+        working-directory: terraform
+        run: |
+          set -eux
+          terraform init -upgrade -reconfigure
+
+      - name: Download destroy plan artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: tfdestroy
+          path: terraform
+
+      - name: Terraform destroy
+        working-directory: terraform
+        run: |
+          set -eux
+          terraform apply tfdestroy
